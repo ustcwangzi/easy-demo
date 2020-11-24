@@ -57,8 +57,8 @@ public class ThreadLocalDemo {
         ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL);
 
         // pool-1-thread-1 : [1, 2]
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(() -> ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL));
 
         ThreadUtils.sleep(1);
 
@@ -68,9 +68,9 @@ public class ThreadLocalDemo {
 
         // pool-1-thread-1 : [1, 2]
         // 因为线程复用，子线程获取到的还是之前的值
-        executorService.execute(() -> ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL));
+        executor.execute(() -> ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL));
 
-        executorService.shutdown();
+        executor.shutdown();
     }
 
     private static void transmittableThreadLocalTest1() {
@@ -79,8 +79,8 @@ public class ThreadLocalDemo {
         ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL);
 
         // pool-1-thread-1 : [1, 2]
-        ExecutorService executorService = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
-        executorService.execute(() -> ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL));
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        executor.execute(() -> ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL));
 
         ThreadUtils.sleep(1);
 
@@ -90,7 +90,7 @@ public class ThreadLocalDemo {
 
         // pool-1-thread-1 : [1, 2, 3]
         // 子线程能获取到主线程新的新值
-        executorService.execute(() -> ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL));
+        executor.execute(() -> ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL));
     }
 
     private static void transmittableThreadLocalTest2() {
@@ -98,9 +98,9 @@ public class ThreadLocalDemo {
         // main : [1, 2]
         ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL);
 
-        ExecutorService executorService = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
 
-        executorService.execute(() -> {
+        executor.execute(() -> {
             // 10 不会影响主线程
             ThreadUtils.TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(10));
             // 20 在主线程中不生效，会在 TransmittableThreadLocal.restoreTtlValues 时被 remove
@@ -114,15 +114,15 @@ public class ThreadLocalDemo {
         ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL);
         // main: null
         ThreadUtils.print(ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL);
-        executorService.shutdown();
+        executor.shutdown();
     }
 
     private static void transmittableThreadLocalTest3() {
         ExecutorService executor = Executors.newFixedThreadPool(1);
-        executor.submit(() -> ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(10)));
+        executor.execute(() -> ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(10)));
 
         ThreadUtils.TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(1));
-        executor.submit(Objects.requireNonNull(TtlRunnable.get(() -> {
+        executor.execute(Objects.requireNonNull(TtlRunnable.get(() -> {
             // pool-1-thread-1 : [1]
             ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL);
             // pool-1-thread-1 : null
@@ -134,25 +134,25 @@ public class ThreadLocalDemo {
     }
 
     private static void transmittableThreadLocalTest4() {
-        ExecutorService executorService = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
-        executorService.execute(() -> ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(10)));
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        executor.execute(() -> ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(10)));
 
         ThreadUtils.TRANSMITTABLE_THREAD_LOCAL.set(Lists.newArrayList(1, 2));
 
-        executorService.execute(ThreadLocalDemo::func1);
-        executorService.shutdown();
+        executor.execute(ThreadLocalDemo::func1);
+        executor.shutdown();
     }
 
     private static void func1() {
         ThreadUtils.sleep(10);
-        ExecutorService executorService = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
-        executorService.execute(() -> {
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        executor.execute(() -> {
             // pool-2-thread-1 : [1, 2]
             ThreadUtils.print(ThreadUtils.TRANSMITTABLE_THREAD_LOCAL);
             // pool-2-thread-1 : null
             ThreadUtils.print(ThreadUtils.SUB_TRANSMITTABLE_THREAD_LOCAL);
         });
-        executorService.shutdown();
+        executor.shutdown();
     }
 
     public static void main(String[] args) {
