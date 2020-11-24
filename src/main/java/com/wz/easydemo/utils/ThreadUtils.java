@@ -9,6 +9,7 @@ public class ThreadUtils {
     public static final ThreadLocal<List<Integer>> THREAD_LOCAL = new ThreadLocal<>();
     public static final ThreadLocal<List<Integer>> INHERITABLE_THREAD_LOCAL = new InheritableThreadLocal<>();
     public static final ThreadLocal<List<Integer>> TRANSMITTABLE_THREAD_LOCAL = new TransmittableThreadLocal<>();
+    public static final ThreadLocal<List<Integer>> SUB_TRANSMITTABLE_THREAD_LOCAL = new TransmittableThreadLocal<>();
 
     public static void sleep(long milliseconds) {
         try {
