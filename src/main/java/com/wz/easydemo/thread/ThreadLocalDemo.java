@@ -40,8 +40,7 @@ public class ThreadLocalDemo {
         ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL);
 
         new Thread(() -> {
-            List<Integer> list = ThreadUtils.INHERITABLE_THREAD_LOCAL.get();
-            System.out.println(Thread.currentThread().getName() + " : " + list);
+            ThreadUtils.print(ThreadUtils.INHERITABLE_THREAD_LOCAL);
             ThreadUtils.INHERITABLE_THREAD_LOCAL.set(Lists.newArrayList(10));
         }).start();
 
