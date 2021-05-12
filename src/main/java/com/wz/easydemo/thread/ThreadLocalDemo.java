@@ -195,6 +195,9 @@ public class ThreadLocalDemo {
         executor.shutdown();
     }
 
+    /**
+     * 不进行 replay，会导致子线程在复用时取到上一次运行时设置的变量
+     */
     private static void test3() throws Exception {
         ThreadLocal<String> threadLocal = new TransmittableThreadLocal<>();
         threadLocal.set("value-in-parent");
@@ -212,6 +215,9 @@ public class ThreadLocalDemo {
         executor.shutdown();
     }
 
+    /**
+     * 若不进行 restore，会导致在拒绝策略为"主线程执行"时，子线程设置的变量传递到主线程
+     */
     private static void test4() throws Exception {
         ThreadLocal<String> threadLocal = new TransmittableThreadLocal<>();
         threadLocal.set("value-in-parent");
