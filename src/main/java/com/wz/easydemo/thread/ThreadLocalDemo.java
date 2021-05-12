@@ -1,5 +1,6 @@
 package com.wz.easydemo.thread;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import com.alibaba.ttl.TtlRunnable;
 import com.alibaba.ttl.threadpool.TtlExecutors;
 import com.google.common.collect.Lists;
@@ -7,8 +8,7 @@ import com.wz.easydemo.utils.ThreadUtils;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class ThreadLocalDemo {
     private static void threadLocalTest() {
@@ -154,13 +154,82 @@ public class ThreadLocalDemo {
         executor.shutdown();
     }
 
-    public static void main(String[] args) {
-//        threadLocalTest();
-//        inheritableThreadLocalTest1();
-//        inheritableThreadLocalTest2();
-//        transmittableThreadLocalTest1();
-//        transmittableThreadLocalTest2();
-//        transmittableThreadLocalTest3();
-        transmittableThreadLocalTest4();
+
+    public static void main(String[] args) throws Exception {
+        test4();
+    }
+
+    private static void test() {
+        ThreadLocal<String> threadLocal = new InheritableThreadLocal<>();
+        threadLocal.set("set value1 in parent");
+        System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get()));
+
+        threadLocal.set("set value2 in parent");
+        executor.execute(() -> System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get()));
+
+        executor.shutdown();
+    }
+
+    private static void test2() throws Exception {
+        ThreadLocal<String> threadLocal = new TransmittableThreadLocal<>();
+        threadLocal.set("value1-in-parent");
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        executor.execute(() -> System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get()));
+        Thread.sleep(10);
+
+        threadLocal.set("value2-in-parent");
+        executor.execute(() -> {
+            System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+            threadLocal.set("value1-in-children");
+        });
+
+
+        Thread.sleep(10);
+        System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+        executor.execute(() -> {
+            System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+        });
+        executor.shutdown();
+    }
+
+    private static void test3() throws Exception {
+        ThreadLocal<String> threadLocal = new TransmittableThreadLocal<>();
+        threadLocal.set("value-in-parent");
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(Executors.newSingleThreadExecutor());
+        executor.execute(() -> {
+            System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+            threadLocal.set("value-in-children");
+        });
+
+        Thread.sleep(10);
+        // main : value-in-parent
+        System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+        // 若不进行 replay，pool-1-thread-1 : value-in-children
+        executor.execute(() -> System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get()));
+        executor.shutdown();
+    }
+
+    private static void test4() throws Exception {
+        ThreadLocal<String> threadLocal = new TransmittableThreadLocal<>();
+        threadLocal.set("value-in-parent");
+        ExecutorService executor = TtlExecutors.getTtlExecutorService(
+                new ThreadPoolExecutor(1, 1, 10, TimeUnit.SECONDS, new SynchronousQueue<>(), new ThreadPoolExecutor.CallerRunsPolicy()));
+
+        for (int i = 0; i < 2; i++) {
+            executor.execute(() -> {
+                System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+                threadLocal.set("value-in-children");
+            });
+        }
+
+        Thread.sleep(10);
+        // 若不进行 restore，main : value-in-children
+        System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get());
+        // pool-1-thread-1 : value-in-children
+        executor.execute(() -> System.out.println(Thread.currentThread().getName() + " : " + threadLocal.get()));
+        executor.shutdown();
     }
 }
