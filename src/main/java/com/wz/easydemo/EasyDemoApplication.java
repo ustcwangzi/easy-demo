@@ -13,6 +13,7 @@ public class EasyDemoApplication {
         SpringApplication.run(EasyDemoApplication.class, args);
         Scanner input = new Scanner(System.in);
         String val;
+
         do {
             System.out.print("请输入时间范围，以-分割(如201601-202012)，输入exit退出:");
             val = input.next();
